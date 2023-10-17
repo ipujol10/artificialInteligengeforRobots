@@ -118,6 +118,11 @@ show(p)  # displays your answer
 
 
 class TestLocalize(unittest.TestCase):
+    def almostEqual(self, l1, l2):
+        for i in range(len(l1)):
+            for j in range(len(l1[i])):
+                self.assertAlmostEqual(l1[i][j], l2[i][j], delta=0.001)
+
     def test_1(self):
         colors = [['G', 'G', 'G'],
                   ['G', 'R', 'G'],
@@ -131,7 +136,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0, 0.0, 0.0],
              [0.0, 1.0, 0.0],
              [0.0, 0.0, 0.0]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_2(self):
         colors = [['G', 'G', 'G'],
@@ -146,7 +151,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0, 0.0, 0.0],
              [0.0, 0.5, 0.5],
              [0.0, 0.0, 0.0]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_3(self):
         colors = [['G', 'G', 'G'],
@@ -161,7 +166,7 @@ class TestLocalize(unittest.TestCase):
             [[0.06666666666, 0.06666666666, 0.06666666666],
              [0.06666666666, 0.26666666666, 0.26666666666],
              [0.06666666666, 0.06666666666, 0.06666666666]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_4(self):
         colors = [['G', 'G', 'G'],
@@ -176,7 +181,7 @@ class TestLocalize(unittest.TestCase):
             [[0.03333333333, 0.03333333333, 0.03333333333],
              [0.13333333333, 0.13333333333, 0.53333333333],
              [0.03333333333, 0.03333333333, 0.03333333333]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_5(self):
         colors = [['G', 'G', 'G'],
@@ -191,7 +196,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0, 0.0, 0.0],
              [0.0, 0.0, 1.0],
              [0.0, 0.0, 0.0]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_6(self):
         colors = [['G', 'G', 'G'],
@@ -206,7 +211,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0289855072, 0.0289855072, 0.0289855072],
              [0.0724637681, 0.2898550724, 0.4637681159],
              [0.0289855072, 0.0289855072, 0.0289855072]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_7(self):
         colors = [['G', 'G', 'G'],
@@ -221,7 +226,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0, 0.0, 0.0],
              [0.0, 0.33333333, 0.66666666],
              [0.0, 0.0, 0.0]])
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_8(self):
         colors = [['R', 'G', 'G', 'R', 'R'],
@@ -236,10 +241,10 @@ class TestLocalize(unittest.TestCase):
                           [0.00715, 0.01017, 0.08696, 0.07988, 0.00935],
                           [0.00739, 0.00894, 0.11272, 0.35350, 0.04065],
                           [0.00910, 0.00715, 0.01434, 0.04313, 0.03642]]
-        self.assertEqual(p, correct_answer)
+        self.almostEqual(p, correct_answer)
 
     def test_normalize(self):
-        self.assertEqual(normalize([[1, 1], [1, 1]]), [
+        self.almostEqual(normalize([[1, 1], [1, 1]]), [
                          [1.0/4, 1.0/4], [1.0/4, 1.0/4]])
 
 
