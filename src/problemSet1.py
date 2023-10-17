@@ -48,8 +48,6 @@ import unittest
 
 def normalize(p):
     s = sum(sum(row) for row in p)
-    if (s == 0):
-        return p
     for row in p:
         for j in range(len(row)):
             row[j] /= s
@@ -61,22 +59,21 @@ def sense(p, colors, Z, sensor_right):
     for i in range(len(p)):
         row = []
         for j in range(len(p[i])):
-            hit = Z == colors[i][j]
-            row.append(p[i][j] * (hit * sensor_right +
-                       (1-hit) * (1-sensor_right)))
+            prob = sensor_right if (Z == colors[i][j]) else 1 - sensor_right
+            row.append(prob * p[i][j])
         q.append(row)
     return normalize(q)
 
 
 def move(p, U, p_move):
     q = []
-    lenx = len(p)
-    for i in range(lenx):
-        leny = len(p[i])
+    leny = len(p)
+    for i in range(leny):
+        lenx = len(p[i])
         row = []
-        for j in range(leny):
+        for j in range(lenx):
             dy, dx = U
-            s = p_move * p[(i+dx) % lenx][(j+dy) % leny]
+            s = p_move * p[(i+dy) % leny][(j+dx) % lenx]
             s += (1-p_move) * p[i][j]
             row.append(s)
         q.append(row)
@@ -90,7 +87,6 @@ def localize(colors, measurements, motions, sensor_right, p_move):
 
     # >>> Insert your code here <<<
     for i in range(len(measurements)):
-        # p = move(p, motions[i], p_move)
         p = sense(p, colors, measurements[i], sensor_right)
         p = move(p, motions[i], p_move)
 
@@ -247,5 +243,5 @@ class TestLocalize(unittest.TestCase):
                          [1.0/4, 1.0/4], [1.0/4, 1.0/4]])
 
 
-# if __name__ == "__main__":
-#    unittest.main()
+if __name__ == "__main__":
+    unittest.main()
