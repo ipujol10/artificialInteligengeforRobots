@@ -46,12 +46,34 @@
 import unittest
 
 
+def normalize(p):
+    s = sum(sum(row) for row in p)
+    for row in p:
+        for j in range(len(row)):
+            row[j] /= s
+    return p
+
+
+def sense(p, colors, Z, sensor_right):
+    q = []
+    for i in range(len(p)):
+        row = []
+        for j in range(len(p[i])):
+            hit = Z == colors[i][j]
+            row.append(p[i][j] * (hit * sensor_right +
+                       (1-hit) * (1-sensor_right)))
+        q.append(row)
+    return normalize(q)
+
+
 def localize(colors, measurements, motions, sensor_right, p_move):
     # initializes p to a uniform distribution over a grid of the same dimensions as colors
     pinit = 1.0 / float(len(colors)) / float(len(colors[0]))
     p = [[pinit for _ in range(len(colors[0]))] for _ in range(len(colors))]
 
     # >>> Insert your code here <<<
+    for i in range(len(measurements)):
+        p = sense(p, colors, measurements[i], sensor_right)
 
     return p
 
@@ -169,6 +191,7 @@ class TestLocalize(unittest.TestCase):
             [[0.0289855072, 0.0289855072, 0.0289855072],
              [0.0724637681, 0.2898550724, 0.4637681159],
              [0.0289855072, 0.0289855072, 0.0289855072]])
+        self.assertEqual(p, correct_answer)
 
     def test_7(self):
         colors = [['G', 'G', 'G'],
@@ -199,6 +222,10 @@ class TestLocalize(unittest.TestCase):
                           [0.00739, 0.00894, 0.11272, 0.35350, 0.04065],
                           [0.00910, 0.00715, 0.01434, 0.04313, 0.03642]]
         self.assertEqual(p, correct_answer)
+
+    def test_normalize(self):
+        self.assertEqual(normalize([[1, 1], [1, 1]]), [
+                         [1.0/4, 1.0/4], [1.0/4, 1.0/4]])
 
 
 if __name__ == "__main__":
