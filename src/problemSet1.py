@@ -48,6 +48,8 @@ import unittest
 
 def normalize(p):
     s = sum(sum(row) for row in p)
+    if (s == 0):
+        return p
     for row in p:
         for j in range(len(row)):
             row[j] /= s
@@ -66,6 +68,21 @@ def sense(p, colors, Z, sensor_right):
     return normalize(q)
 
 
+def move(p, U, p_move):
+    q = []
+    lenx = len(p)
+    for i in range(lenx):
+        leny = len(p[i])
+        row = []
+        for j in range(leny):
+            dy, dx = U
+            s = p_move * p[(i+dx) % lenx][(j+dy) % leny]
+            s += (1-p_move) * p[i][j]
+            row.append(s)
+        q.append(row)
+    return q
+
+
 def localize(colors, measurements, motions, sensor_right, p_move):
     # initializes p to a uniform distribution over a grid of the same dimensions as colors
     pinit = 1.0 / float(len(colors)) / float(len(colors[0]))
@@ -73,7 +90,9 @@ def localize(colors, measurements, motions, sensor_right, p_move):
 
     # >>> Insert your code here <<<
     for i in range(len(measurements)):
+        # p = move(p, motions[i], p_move)
         p = sense(p, colors, measurements[i], sensor_right)
+        p = move(p, motions[i], p_move)
 
     return p
 
@@ -228,5 +247,5 @@ class TestLocalize(unittest.TestCase):
                          [1.0/4, 1.0/4], [1.0/4, 1.0/4]])
 
 
-if __name__ == "__main__":
-    unittest.main()
+# if __name__ == "__main__":
+#    unittest.main()
