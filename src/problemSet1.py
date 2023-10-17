@@ -73,7 +73,7 @@ def move(p, U, p_move):
         row = []
         for j in range(lenx):
             dy, dx = U
-            s = p_move * p[(i+dy) % leny][(j+dx) % lenx]
+            s = p_move * p[(i-dy) % leny][(j-dx) % lenx]
             s += (1-p_move) * p[i][j]
             row.append(s)
         q.append(row)
@@ -87,8 +87,8 @@ def localize(colors, measurements, motions, sensor_right, p_move):
 
     # >>> Insert your code here <<<
     for i in range(len(measurements)):
-        p = sense(p, colors, measurements[i], sensor_right)
         p = move(p, motions[i], p_move)
+        p = sense(p, colors, measurements[i], sensor_right)
 
     return p
 
@@ -121,7 +121,8 @@ class TestLocalize(unittest.TestCase):
     def almostEqual(self, l1, l2):
         for i in range(len(l1)):
             for j in range(len(l1[i])):
-                self.assertAlmostEqual(l1[i][j], l2[i][j], delta=0.001)
+                self.assertAlmostEqual(
+                    l1[i][j], l2[i][j], msg=f"Different at x={j}, y={i}", delta=0.001)
 
     def test_1(self):
         colors = [['G', 'G', 'G'],
