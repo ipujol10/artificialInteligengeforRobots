@@ -42,26 +42,23 @@ def isGoal(goal, x, y):
 def isValidCell(grid, closed, x, y):
     if (x < 0 or x >= len(grid) or y < 0 or y >= len(grid[0])):
         return False
-    return closed[x][y] == [-1, -1] and grid[x][y] == 0
+    return closed[x][y] == -1 and grid[x][y] == 0
 
 
-def getChar(current, previous):
-    x1, y1 = current
-    x2, y2 = previous
-    diff = [x1 - x2, y1 - y2]
-    for comp, char in zip(delta, delta_name):
-        if (diff == comp):
-            return char
-    raise ValueError("Cells not contiguos")
+def getPrevious(current, step):
+    x, y = current
+    dx, dy = delta[step]
+    return [x - dx, y - dy]
 
 
 def makePath(grid, init, goal, closed):
     path = [[' ' for _ in col] for col in grid]
     path[goal[0]][goal[1]] = '*'
     current = goal
-    previous = closed[goal[0]][goal[1]]
     while (current != init):
-        path[previous[0]][previous[1]] = getChar(current, previous)
+        step = closed[current[0]][current[1]]
+        previous = getPrevious(current, step)
+        path[previous[0]][previous[1]] = delta_name[step]
         current = previous
         previous = closed[current[0]][current[1]]
     return path
@@ -72,20 +69,20 @@ def search(grid, init, goal, cost):
     # modify code below
     # ----------------------------------------
     searching = [[0, init[0], init[1]]]
-    closed = [[[-1, -1] for _ in col] for col in grid]
-    closed[init[0]][init[1]] = init
+    closed = [[-1 for _ in col] for col in grid]
+    closed[init[0]][init[1]] = len(delta)
     while searching:
         nextUp = min(searching)
         searching.remove(nextUp)
         g, x, y = nextUp
         if (isGoal(goal, x, y)):
             break
-        for dlt in delta:
+        for i, dlt in enumerate(delta):
             x2 = x + dlt[0]
             y2 = y + dlt[1]
             if (isValidCell(grid, closed, x2, y2)):
                 searching.append([g + cost, x2, y2])
-                closed[x2][y2] = [x, y]
+                closed[x2][y2] = i
     return makePath(grid, init, goal, closed)
 
 
