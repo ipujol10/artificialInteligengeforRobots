@@ -69,15 +69,15 @@ def getPath(policy, init):
     policy2D = [[' ' for _ in row] for row in policy]
     policy2D[x][y] = policy[x][y][o]
     while (policy[x][y][o] != '*'):
-        match policy[x][y][o]:
-            case 'R':
-                o2 = (o - 1) % 4
-            case 'L':
-                o2 = (o + 1) % 4
-            case '#':
-                o2 = o
-            case _:
-                raise ValueError
+        char = policy[x][y][o]
+        if (char == 'R'):
+            o2 = (o - 1) % 4
+        elif (char == 'L'):
+            o2 = (o + 1) % 4
+        elif (char == '#'):
+            o2 = o
+        else:
+            raise ValueError
         x += forward[o2][0]
         y += forward[o2][1]
         o = o2
