@@ -59,40 +59,57 @@ cost = [2, 1, 20]  # cost has 3 values, corresponding to making
 
 
 def isValidCell(grid, x, y):
-    return x >= 0 and x < len(grid) and y >= 0 and y < len(grid[0])
+    if (x < 0 or x >= len(grid) or y < 0 or y >= len(grid[0])):
+        return False
+    return grid[x][y] == 0
 
 
-def makePath(grid, init, goal, values):
-    path = [[' ' for _ in row] for row in grid]
-    x, y = goal
-    path[x][y] = '*'
-    print(values[x][y])
+def getPath(policy, init):
+    x, y, o = init
+    policy2D = [[' ' for _ in row] for row in policy]
+    policy2D[x][y] = policy[x][y][o]
+    while (policy[x][y][o] != '*'):
+        match policy[x][y][o]:
+            case 'R':
+                o2 = (o - 1) % 4
+            case 'L':
+                o2 = (o + 1) % 4
+            case '#':
+                o2 = o
+            case _:
+                raise ValueError
+        x += forward[o2][0]
+        y += forward[o2][1]
+        o = o2
+        policy2D[x][y] = policy[x][y][o]
 
-    return path
+    return policy2D
 
 
 def optimum_policy2D(grid, init, goal, cost):
-    x, y, d = init
-    searching = [[0, x, y, d]]
-    values = [[[[-1, -1] for _ in forward] for _ in row] for row in grid]
-    values[x][y][d] = [0, len(action)]
+    x, y = goal
+    searching = [[0, x, y, i] for i in range(len(forward))]
+    value = [[[999 for _ in forward] for _ in row] for row in grid]
+    policy = [[[' ' for _ in forward] for _ in row] for row in grid]
+    for i in range(len(forward)):
+        policy[x][y][i] = '*'
     while (searching):
         nextUp = min(searching)
         searching.remove(nextUp)
-        g, x, y, d = nextUp
-        for i, act in enumerate(action):
-            d2 = (d + act) % len(forward)
-            dx, dy = forward[d2]
-            x2 = x + dx
-            y2 = y + dy
+        g, x, y, o = nextUp
+        value[x][y][o] = g
+        for act, char, cst in zip(action, action_name, cost):
+            o2 = (o - act) % len(forward)
+            dx, dy = forward[o]
+            x2 = x - dx
+            y2 = y - dy
             if (isValidCell(grid, x2, y2)):
-                g2 = g + cost[i]
-                nG = values[x2][y2][d2][0]
-                if (nG < 0 or g2 < nG):
-                    searching.append([g2, x2, y2, d2])
-                    values[x2][y2][d2] = [g2, i]
+                v2 = g + cst
+                if (v2 < value[x2][y2][o2]):
+                    searching.append([v2, x2, y2, o2])
+                    policy[x2][y2][o2] = char
 
-    return makePath(grid, init, goal, values)
+    return getPath(policy, init)
 
 
 if __name__ == "__main__":
