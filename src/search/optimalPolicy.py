@@ -30,10 +30,10 @@ delta = [[-1, 0],  # go up
 delta_name = ['^', '<', 'v', '>']
 
 
-def isValidCell(grid, closed, x, y):
+def isValidCell(grid, x, y):
     if (x < 0 or x >= len(grid) or y < 0 or y >= len(grid[0])):
         return False
-    return closed[x][y] == -1 and grid[x][y] == 0
+    return grid[x][y] == 0
 
 
 def optimum_policy(grid, goal, cost):
@@ -45,21 +45,22 @@ def optimum_policy(grid, goal, cost):
     # demonstrated in the previous video.
     x, y = goal
     searching = [[0, x, y]]
-    closed = [[-1 for _ in row] for row in grid]
-    closed[x][y] = len(delta)
+    value = [[99 for _ in row] for row in grid]
     policy = [[' ' for _ in row] for row in grid]
     policy[x][y] = '*'
     while (searching):
         nextUP = min(searching)
         searching.remove(nextUP)
         g, x, y = nextUP
-        for i, (dlt, char) in enumerate(zip(delta, delta_name)):
+        value[x][y] = g
+        for dlt, char in zip(delta, delta_name):
             x2 = x - dlt[0]
             y2 = y - dlt[1]
-            if (isValidCell(grid, closed, x2, y2)):
-                searching.append([g + cost, x2, y2])
-                closed[x][y] = i
-                policy[x2][y2] = char
+            if (isValidCell(grid, x2, y2)):
+                v2 = g + cost
+                if (v2 < value[x2][y2]):
+                    searching.append([g + cost, x2, y2])
+                    policy[x2][y2] = char
     return policy
 
 
