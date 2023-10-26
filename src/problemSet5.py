@@ -20,6 +20,7 @@
 
 from math import *
 import random
+import matplotlib.pyplot as plt
 
 
 # ------------------------------------------------
@@ -139,10 +140,10 @@ class robot:
         #
         #
         if (self.x >= radius and self.x <= 3*radius):
-            return self.y - 2 * radius if (self.y > radius) else 2 * radius - self.y
-        dx = radius - self.x if self.x < radius else self.x - 3*radius
-        r = sqrt(dx ** 2 + (radius - self.y) ** 2)
-        return radius - r
+            return self.y - 2.0 * radius if (self.y > radius) else -self.y
+        dx = radius - self.x if self.x < radius else self.x - 3.0*radius
+        r = sqrt(dx ** 2.0 + (radius - self.y) ** 2.0)
+        return r - radius
 
 ############## ONLY ADD / MODIFY CODE ABOVE THIS LINE ####################
 
@@ -159,6 +160,8 @@ def run(params, radius, printflag=False):
     err = 0.0
     int_crosstrack_error = 0.0
     N = 200
+    x = []
+    y = []
 
     # You need to define the cte function!
     crosstrack_error = myrobot.cte(radius)
@@ -172,14 +175,19 @@ def run(params, radius, printflag=False):
                 - params[1] * diff_crosstrack_error \
                 - params[2] * int_crosstrack_error
         myrobot = myrobot.move(steer, speed)
+        x.append(myrobot.x)
+        y.append(myrobot.y)
         if i >= N:
             err += crosstrack_error ** 2
         if printflag:
             print(myrobot)
-    return err / float(N)
+    return err / float(N), x, y
 
 
 radius = 25.0
 params = [10.0, 15.0, 0]
-err = run(params, radius, True)
+err, x, y = run(params, radius, True)
 print('\nFinal parameters: ', params, '\n ->', err)
+
+plt.plot(x, y)
+plt.show()
