@@ -12,6 +12,7 @@
 
 from math import *
 import random
+import matplotlib.pyplot as plt
 
 
 # don't change the noise paameters
@@ -445,6 +446,8 @@ def run(grid, goal, spath, params, printflag=False, speed=0.1, timeout=1000):
     cte = 0.0
     err = 0.0
     N = 0
+    x = []
+    y = []
 
     index = 0  # index into the path
 
@@ -457,6 +460,8 @@ def run(grid, goal, spath, params, printflag=False, speed=0.1, timeout=1000):
 
         # start with the present robot estimate
         estimate = filter.get_position()
+        x.append(estimate[0])
+        y.append(estimate[1])
 
         # ENTER CODE HERE
         delta, r = getVectors(index, spath, estimate)
@@ -489,7 +494,7 @@ def run(grid, goal, spath, params, printflag=False, speed=0.1, timeout=1000):
         if printflag:
             print(myrobot, cte, index, u)
 
-    return [myrobot.check_goal(goal), myrobot.num_collisions, myrobot.num_steps]
+    return [myrobot.check_goal(goal), myrobot.num_collisions, myrobot.num_steps, x, y]
 
 
 # ------------------------------------------------
@@ -535,8 +540,12 @@ p_gain = 2.0
 d_gain = 6.0
 
 
-print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise,
-           weight_data, weight_smooth, p_gain, d_gain))
+mainOut = main(grid, init, goal, steering_noise, distance_noise,
+               measurement_noise, weight_data, weight_smooth, p_gain, d_gain)
+print(mainOut[:-2])
+y, x = mainOut[-2:]
+plt.plot(x, y)
+plt.show()
 
 
 def twiddle(init_params):
