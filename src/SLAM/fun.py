@@ -504,7 +504,7 @@ def run(grid, goal, spath, params, printflag=False, speed=0.1, timeout=1000):
 def getError(mainOut):
     completed, collisions, steps = mainOut
     comp = 0 if completed else 100000000
-    return 100*collisions + steps + comp
+    return 1000*collisions + steps + comp
 
 
 def twiddle(p, main):
@@ -580,9 +580,10 @@ weight_smooth = 0.2
 p_gain = 2.0
 d_gain = 6.0
 
-p = [weight_data, weight_smooth, p_gain, d_gain]
-p = twiddle(p, main)
-print(p)
+p = [0.12, 0.2, 1.9, 5.6]
+# p = [weight_data, weight_smooth, p_gain, d_gain]
+# p = twiddle(p, main)
+# print(p)
 weight_data, weight_smooth, p_gain, d_gain = p
 
 ###################################
