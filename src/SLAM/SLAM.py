@@ -516,6 +516,40 @@ def slam(data, N, num_landmarks, motion_noise, measurement_noise):
     # Add your code here!
     #
     #
+    mot = 1. / motion_noise
+    mes = 1. / measurement_noise
+
+    dim = 2 * (N + num_landmarks)
+    mu = matrix()
+    mu.zero(dim, 1)
+    omega = matrix()
+    omega.zero(dim, dim)
+    omega.value[0][0] = 1.
+    omega.value[1][1] = 1.
+    xi = matrix()
+    xi.zero(dim, 1)
+    xi.value[0][0] = world_size / 2
+    xi.value[1][0] = world_size / 2
+    for i, (z, motion) in enumerate(data):
+        f = 2 * i
+        t = 2 * (i + 1)
+        for j in range(2):
+            omega.value[f+j][f+j] += mot
+            omega.value[t+j][t+j] += mot
+            omega.value[f+j][t+j] -= mot
+            omega.value[t+j][f+j] -= mot
+            xi.value[f+j][0] -= motion[j] * mot
+            xi.value[t+j][0] += motion[j] * mot
+        for land, *xy in z:
+            b = 2 * (N + land)
+            for j in range(2):
+                omega.value[f+j][f+j] += mes
+                omega.value[b+j][b+j] += mes
+                omega.value[f+j][b+j] -= mes
+                omega.value[b+j][f+j] -= mes
+                xi.value[f+j][0] -= xy[j] * mes
+                xi.value[b+j][0] += xy[j] * mes
+    mu = omega.inverse() * xi
     return mu  # Make sure you return mu for grading!
 
 ############### ENTER YOUR CODE ABOVE HERE ###################
