@@ -571,6 +571,52 @@ def online_slam(data, N, num_landmarks, motion_noise, measurement_noise):
     # Enter your code here!
     #
     #
+    mot = 1. / motion_noise
+    mes = 1. / measurement_noise
+
+    dim = 2 * (1 + num_landmarks)
+    Omega = matrix()
+    Omega.zero(dim, dim)
+    Omega.value[0][0] = 1.
+    Omega.value[1][1] = 1.
+    xi = matrix()
+    xi.zero(dim, 1)
+    xi.value[0][0] = world_size / 2.
+    xi.value[1][0] = world_size / 2.
+    for measure, motion in data:
+        extend = list(range(2)) + list(range(4, dim + 2))
+        omegaP = Omega.expand(dim + 2, dim + 2, extend)
+        xiP = xi.expand(dim + 2, 1, extend, [0])
+        for land, *xy in measure:
+            j = 2 * (2 + land)
+            for i in range(2):
+                omegaP.value[i][i] += mes
+                omegaP.value[j+i][j+i] += mes
+                omegaP.value[i][j+i] -= mes
+                omegaP.value[j+i][i] -= mes
+                xiP.value[i][0] -= xy[i] * mes
+                xiP.value[j+i][0] += xy[i] * mes
+        for i in range(2):
+            omegaP.value[i][i] += mot
+            omegaP.value[2+i][2+i] += mot
+            omegaP.value[2+i][i] -= mot
+            omegaP.value[i][2+i] -= mot
+            xiP.value[i][0] -= motion[i] * mot
+            xiP.value[2+i][0] += motion[i] * mot
+
+        a = omegaP.take(list(range(2)), list(range(2, dim + 2)))
+        b = omegaP.take(list(range(2)))
+        c = xiP.take(list(range(2)), [0])
+
+        omegaP = omegaP.take(list(range(2, dim + 2)))
+        xiP = xiP.take(list(range(2, dim + 2)), [0])
+
+        aT = a.transpose()
+        bI = b.inverse()
+        Omega = omegaP - aT * bI * a
+        xi = xiP - aT * bI * c
+
+    mu = Omega.inverse() * xi
     # make sure you return both of these matrices to be marked correct.
     return mu, Omega
 
