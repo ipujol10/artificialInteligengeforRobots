@@ -84,7 +84,7 @@ def plan(warehouse, dropzone, todo):
     for n in todo:
         cost += 2. * aStar(warehouse, heuristic, dropzone, n)
         goal = findGoal(warehouse, n)
-        warehouse[goal[0]][goal[1]]
+        warehouse[goal[0]][goal[1]] = 0
 
     return cost
 
@@ -93,9 +93,9 @@ def aStar(warehouse: list, heuristic: list[list[int]], dropZone: list[int, int],
     goal = findGoal(warehouse, package)
     i, j = dropZone
     searching = [[0, 0, i, j]]
-    values = [[-1 for _ in row] for row in warehouse]
+    values = [[100 for _ in row] for row in warehouse]
     values[i][j] = 0
-    smaller = 1000000
+    smaller = 100
     while (searching):
         nextUp = min(searching)
         searching.remove(nextUp)
@@ -109,7 +109,7 @@ def aStar(warehouse: list, heuristic: list[list[int]], dropZone: list[int, int],
         for inc, k, l in neighbours:
             g2 = g + inc
             v = values[k][l]
-            if (v < 0 or g2 < v):
+            if (g2 < v):
                 h = heuristic[k][l]
                 searching.append([h + g2, g2, k, l])
     raise ValueError("Could not find a path")
