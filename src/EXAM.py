@@ -82,25 +82,36 @@ def plan(warehouse, dropzone, todo):
     heuristic = generateHeuristic(warehouse, dropzone)
     cost = 0
     for n in todo:
+        cost += 2. * aStar(warehouse, heuristic, dropzone, n)
         goal = findGoal(warehouse, n)
-        cost += aStar(warehouse, dropzone, goal)
+        warehouse[goal[0]][goal[1]]
 
     return cost
 
 
-def aStar(warehouse: list[list[int]], dropZone: list[int, int], goal: list[int, int]) -> float:
+def aStar(warehouse: list, heuristic: list[list[int]], dropZone: list[int, int], package: int) -> float:
+    goal = findGoal(warehouse, package)
     i, j = dropZone
     searching = [[0, 0, i, j]]
-    closed = [[-1 for _ in row] for row in warehouse]
-    closed[i][j] = 0
+    values = [[-1 for _ in row] for row in warehouse]
+    values[i][j] = 0
+    smaller = 1000000
     while (searching):
         nextUp = min(searching)
         searching.remove(nextUp)
         _, g, i, j = nextUp
+        values[i][j] = g
         if (isGoal(goal, i, j)):
-            return g
-        for inc, k, l in findNeighbours(warehouse, closed, i, j):
-            ...
+            smaller = min(smaller, g)
+        if (g > smaller):
+            return smaller
+        neighbours = findNeighbours(warehouse, i, j, package)
+        for inc, k, l in neighbours:
+            g2 = g + inc
+            v = values[k][l]
+            if (v < 0 or g2 < v):
+                h = heuristic[k][l]
+                searching.append([h + g2, g2, k, l])
     raise ValueError("Could not find a path")
 
 
@@ -108,7 +119,7 @@ def isGoal(goal: list[int], i: int, j: int) -> bool:
     return goal[0] == i and goal[1] == j
 
 
-def findNeighbours(warehouse: list[list[int]], closed: list[list[int]], i: int, j: int) -> list[list[float]]:
+def findNeighbours(warehouse: list[list[int]], i: int, j: int, package: int) -> list[list[float]]:
     neighbours = []
     for k, l in itertools.product(range(-1, 2), range(-1, 2)):
         if (k == 0 and l == 0):
@@ -117,9 +128,9 @@ def findNeighbours(warehouse: list[list[int]], closed: list[list[int]], i: int, 
         n = j + l
         if (m < 0 or m >= len(warehouse) or n < 0 or n >= len(warehouse[0])):
             continue
-        if (warehouse[m][n] != 0 or closed != -1):
+        if (warehouse[m][n] not in [0, package]):
             continue
-        g = 1.5 if (k == l) else 1
+        g = 1.5 if (abs(k) == abs(l)) else 1
         neighbours.append([g, m, n])
     return neighbours
 
