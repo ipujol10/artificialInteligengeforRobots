@@ -80,12 +80,48 @@ todo = [2, 1]
 
 def plan(warehouse, dropzone, todo):
     heuristic = generateHeuristic(warehouse, dropzone)
+    cost = 0
+    for n in todo:
+        goal = findGoal(warehouse, n)
+        cost += aStar(warehouse, dropzone, goal)
 
     return cost
 
 
 def aStar(warehouse: list[list[int]], dropZone: list[int, int], goal: list[int, int]) -> float:
-    ...
+    i, j = dropZone
+    searching = [[0, 0, i, j]]
+    closed = [[-1 for _ in row] for row in warehouse]
+    closed[i][j] = 0
+    while (searching):
+        nextUp = min(searching)
+        searching.remove(nextUp)
+        _, g, i, j = nextUp
+        if (isGoal(goal, i, j)):
+            return g
+        for inc, k, l in findNeighbours(warehouse, closed, i, j):
+            ...
+    raise ValueError("Could not find a path")
+
+
+def isGoal(goal: list[int], i: int, j: int) -> bool:
+    return goal[0] == i and goal[1] == j
+
+
+def findNeighbours(warehouse: list[list[int]], closed: list[list[int]], i: int, j: int) -> list[list[float]]:
+    neighbours = []
+    for k, l in itertools.product(range(-1, 2), range(-1, 2)):
+        if (k == 0 and l == 0):
+            continue
+        m = i + k
+        n = j + l
+        if (m < 0 or m >= len(warehouse) or n < 0 or n >= len(warehouse[0])):
+            continue
+        if (warehouse[m][n] != 0 or closed != -1):
+            continue
+        g = 1.5 if (k == l) else 1
+        neighbours.append([g, m, n])
+    return neighbours
 
 
 def generateHeuristic(warehouse: list[list[int]], dropZone: list[int, int]) -> list[list[int]]:
@@ -105,7 +141,7 @@ def generateHeuristic(warehouse: list[list[int]], dropZone: list[int, int]) -> l
 def findNeighboursHeuristic(heuristic: list[list[int]], i: int, j: int) -> list[list[int]]:
     neighbours = []
     for k, l in itertools.product(range(-1, 2), range(-1, 2)):
-        if (k == l):
+        if (k == 0 and l == 0):
             continue
         m = i + k
         n = j + l
