@@ -67,13 +67,36 @@ import random
 # next position. The OTHER variable that your function returns will be
 # passed back to your function the next time it is called. You can use
 # this to keep track of important information over time.
-def estimate_next_pos(measurement, OTHER=None):
+def estimate_next_pos(measurement: tuple[float, float], OTHER: list[tuple[float, float]] | None = None):
     """Estimate the next (x, y) position of the wandering Traxbot
     based on noisy (x, y) measurements."""
 
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
+    if (OTHER is None):
+        OTHER = []
+    if (len(OTHER) < 2):
+        OTHER.append(measurement)
+        return measurement, OTHER
+    OTHER.append(measurement)
+    vectors = [getVector(OTHER[i], OTHER[i+1]) for i in range(2)]
+    angle = getAngle(*vectors) + getAngle((1, 0), vectors[-1])
+    d = sum(distance_between(OTHER[i], OTHER[i+1]) for i in range(2)) / 2
+    xy_estimate = (measurement[0] + d * cos(angle),
+                   measurement[1] + d * sin(angle))
     return xy_estimate, OTHER
+
+
+def getVector(p1: tuple[float, float], p2: tuple[float, float]) -> tuple[float, float]:
+    return p2[0] - p1[0], p2[1] - p1[1]
+
+
+def getAngle(v1: tuple[float, float], v2: tuple[float, float]) -> float:
+    x1, y1 = v1
+    x2, y2 = v2
+    dot_product = x1*x2 + y1*y2
+    det = x1*y2 - y1*x2
+    return atan2(det, dot_product)
 
 # A helper function you may find useful.
 
