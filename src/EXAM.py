@@ -79,8 +79,50 @@ todo = [2, 1]
 
 
 def plan(warehouse, dropzone, todo):
+    heuristic = generateHeuristic(warehouse, dropzone)
 
     return cost
+
+
+def aStar(warehouse: list[list[int]], dropZone: list[int, int], goal: list[int, int]) -> float:
+    ...
+
+
+def generateHeuristic(warehouse: list[list[int]], dropZone: list[int, int]) -> list[list[int]]:
+    buffer = [[0, dropZone[0], dropZone[1]]]
+    heuristic = [[-1 for _ in row] for row in warehouse]
+    while (buffer):
+        nextUp = min(buffer)
+        buffer.remove(nextUp)
+        h, i, j = nextUp
+        heuristic[i][j] = h
+        for k, l in findNeighboursHeuristic(heuristic, i, j):
+            buffer.append([h + 1, k, l])
+            heuristic[k][l] = -2
+    return heuristic
+
+
+def findNeighboursHeuristic(heuristic: list[list[int]], i: int, j: int) -> list[list[int]]:
+    neighbours = []
+    for k, l in itertools.product(range(-1, 2), range(-1, 2)):
+        if (k == l):
+            continue
+        m = i + k
+        n = j + l
+        if (m < 0 or m >= len(heuristic) or n < 0 or n >= len(heuristic[0])):
+            continue
+        if (heuristic[m][n] != -1):
+            continue
+        neighbours.append([m, n])
+    return neighbours
+
+
+def findGoal(warehouse: list[list[int]], todo: int) -> list[int, int]:
+    for i in range(len(warehouse)):
+        for j in range(len(warehouse[i])):
+            if (warehouse[i][j] == todo):
+                return [i, j]
+    raise ValueError("The TODO doesn't exist")
 
 ################# TESTING ##################
 
