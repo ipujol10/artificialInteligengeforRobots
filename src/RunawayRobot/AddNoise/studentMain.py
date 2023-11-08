@@ -45,7 +45,6 @@ def estimate_next_pos(measurement, OTHER=None):
 
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
-    xy_estimate = (3.2, 9.1)
     if (OTHER is None):
         OTHER = [[0., 0., 0., measurement[0], measurement[1]]]
     if (len(OTHER) < 3):
@@ -54,11 +53,12 @@ def estimate_next_pos(measurement, OTHER=None):
             OTHER[0][0] = distance_between(OTHER[1], OTHER[2])
         return measurement, OTHER
     OTHER.append(measurement)
-    OTHER[0] = twiddle(OTHER[0], OTHER[1:], 0.002)
+    OTHER[0] = twiddle(OTHER[0], OTHER[1:])
+    xy_estimate = nextPosition(OTHER)
     return xy_estimate, OTHER
 
 
-def twiddle(p: list[float], OTHER: list[tuple[float, float]], tol=0.2) -> list[float]:
+def twiddle(p: list[float], OTHER: list[tuple[float, float]], tol=0.002) -> list[float]:
     dp = [1. for _ in p]
     best_err = run(p, OTHER)
     while (sum(dp) > tol):
@@ -81,10 +81,22 @@ def twiddle(p: list[float], OTHER: list[tuple[float, float]], tol=0.2) -> list[f
     return p
 
 
-def run(p: list[float], OTHER: list[tuple[float, float]]) -> float:
+def run(p: list[float], measurements: list[tuple[float, float]]) -> float:
     distance, turning, heading, x, y = p
     r = robot(x, y, heading, turning, distance)
-    return sum(distance_between(measurement, r.sense()) for measurement in OTHER)
+    error = 0
+    for measurement in measurements:
+        error += distance_between(measurement, r.sense())
+        r.move_in_circle()
+    return error
+
+
+def nextPosition(OTHER: list[float | tuple[float, float]]) -> tuple[float, float]:
+    distance, turning, heading, x, y = OTHER[0]
+    r = robot(x, y, heading, turning, distance)
+    for _ in OTHER[1:]:
+        r.move_in_circle()
+    return r.sense()
 
 # A helper function you may find useful.
 
