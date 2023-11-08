@@ -46,7 +46,45 @@ def estimate_next_pos(measurement, OTHER=None):
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
     xy_estimate = (3.2, 9.1)
+    if (OTHER is None):
+        OTHER = [[0., 0., 0., measurement[0], measurement[1]]]
+    if (len(OTHER) < 3):
+        OTHER.append(measurement)
+        if (len(OTHER) == 3):
+            OTHER[0][0] = distance_between(OTHER[1], OTHER[2])
+        return measurement, OTHER
+    OTHER.append(measurement)
+    OTHER[0] = twiddle(OTHER[0], OTHER[1:], 0.002)
     return xy_estimate, OTHER
+
+
+def twiddle(p: list[float], OTHER: list[tuple[float, float]], tol=0.2) -> list[float]:
+    dp = [1. for _ in p]
+    best_err = run(p, OTHER)
+    while (sum(dp) > tol):
+        for i in range(len(p)):
+            p[i] += dp[i]
+            err = run(p, OTHER)
+            if (err < best_err):
+                best_err = err
+                dp[i] *= 1.1
+            else:
+                p[i] -= 2 * dp[i]
+                err = run(p, OTHER)
+                if (err < best_err):
+                    best_err = err
+                    dp[i] *= 1.1
+                else:
+                    p[i] += dp[i]
+                    dp[i] *= 0.9
+
+    return p
+
+
+def run(p: list[float], OTHER: list[tuple[float, float]]) -> float:
+    distance, turning, heading, x, y = p
+    r = robot(x, y, heading, turning, distance)
+    return sum(distance_between(measurement, r.sense()) for measurement in OTHER)
 
 # A helper function you may find useful.
 
@@ -102,7 +140,7 @@ test_target = robot(2.1, 4.3, 0.5, 2*pi / 34.0, 1.5)
 measurement_noise = 0.05 * test_target.distance
 test_target.set_noise(0.0, 0.0, measurement_noise)
 
-demo_grading(naive_next_pos, test_target)
+demo_grading(estimate_next_pos, test_target)
 
 
 def demo_grading(estimate_next_pos_fcn, target_bot, OTHER=None):
