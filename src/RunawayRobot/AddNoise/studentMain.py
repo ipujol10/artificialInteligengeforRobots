@@ -45,59 +45,68 @@ def estimate_next_pos(measurement, OTHER=None):
 
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
+    xy_estimate = (0., 0.)
     if (OTHER is None):
-        OTHER = [[0., 0., 0., measurement[0], measurement[1]]]
-    if (len(OTHER) < 3):
-        OTHER.append(measurement)
-        if (len(OTHER) == 3):
-            OTHER[0][0] = distance_between(OTHER[1], OTHER[2])
-        return measurement, OTHER
-    OTHER.append(measurement)
-    OTHER[0] = twiddle(OTHER[0], OTHER[1:])
-    xy_estimate = nextPosition(OTHER)
+        # x = [x, y, r, angle, dAngle]
+        x = matrix([[0., 0., 0., 0., 0.]])
+        P = matrix([[]])
+        P.identity(5)
+        for i in range(len(P.value)):
+            for j in range(len(P.value[i])):
+                P.value[i][j] *= 1000.
+        # OTHER = {'z': [measurement], 'x': x.transpose(), 'p': P}
+        OTHER = (x.transpose(), P)
+    x, P = OTHER
+    x, P = kalman(measurement, P, x)
+    xy_estimate = (x.value[0][0], x.value[1][0])
+    OTHER = x, P
     return xy_estimate, OTHER
 
 
-def twiddle(p: list[float], OTHER: list[tuple[float, float]], tol=0.002) -> list[float]:
-    dp = [1. for _ in p]
-    best_err = run(p, OTHER)
-    while (sum(dp) > tol):
-        for i in range(len(p)):
-            p[i] += dp[i]
-            err = run(p, OTHER)
-            if (err < best_err):
-                best_err = err
-                dp[i] *= 1.1
-            else:
-                p[i] -= 2 * dp[i]
-                err = run(p, OTHER)
-                if (err < best_err):
-                    best_err = err
-                    dp[i] *= 1.1
-                else:
-                    p[i] += dp[i]
-                    dp[i] *= 0.9
+def kalman(measurement: tuple[float, float], P: matrix, x: matrix) -> tuple[matrix, matrix]:
+    u = matrix([[0., 0., 0., 0., 0.]])
+    u = u.transpose()
 
-    return p
+    H = matrix([[1., 0., 0., 0., 0.],
+                [0., 1., 0., 0., 0.]])
+    R = matrix([[measurement_noise, 0.],
+                [0., measurement_noise]])
+    I = matrix([[]])
+    I.identity(5)
 
+    x1, y1 = measurement
+    Z = matrix([[x1, y1]])
+    y = Z.transpose() - H*x
+    S = H*P*H.transpose() + R
+    K = P*H.transpose()*S.inverse()
+    x = x + K*y
+    P = (I - K*H) * P
 
-def run(p: list[float], measurements: list[tuple[float, float]]) -> float:
-    distance, turning, heading, x, y = p
-    r = robot(x, y, heading, turning, distance)
-    error = 0
-    for measurement in measurements:
-        error += distance_between(measurement, r.sense())
-        r.move_in_circle()
-    return error
+    x0 = x.value[0][0]
+    y0 = x.value[1][0]
+    r = x.value[2][0]
+    angle = x.value[3][0]
+    dAngle = x.value[4][0]
 
+    # next state function
+    F = matrix([[1., 0., cos(angle+dAngle), -r*sin(angle+dAngle), -r*sin(angle+dAngle)],
+                [0., 1., sin(angle+dAngle), r*cos(angle+dAngle),
+                 r*cos(angle+dAngle)],
+                [0., 0., 1., 0., 0.],
+                [0., 0., 0., 1., 1.],
+                [0., 0., 0., 0., 1.]])
 
-def nextPosition(OTHER: list[float | tuple[float, float]]) -> tuple[float, float]:
-    distance, turning, heading, x, y = OTHER[0]
-    r = robot(x, y, heading, turning, distance)
-    for _ in OTHER[1:]:
-        r.move_in_circle()
-    return r.sense()
+    # calculate new stimate
+    x = matrix([[x0 + r*cos(angle+dAngle)],
+                [y0 + r*sin(angle+dAngle)],
+                [r],
+                [angle + dAngle],
+                [dAngle]])
 
+    # prediction
+    P = F * P * F.transpose()
+
+    return x, P
 # A helper function you may find useful.
 
 
@@ -187,7 +196,7 @@ def demo_grading(estimate_next_pos_fcn, target_bot, OTHER=None):
     broken_robot.penup()
     measured_broken_robot.penup()
     # End of Visualization
-    while not localized and ctr <= 10:
+    while not localized and ctr <= 1000:
         ctr += 1
         measurement = target_bot.sense()
         position_guess, OTHER = estimate_next_pos_fcn(measurement, OTHER)
@@ -197,7 +206,7 @@ def demo_grading(estimate_next_pos_fcn, target_bot, OTHER=None):
         if error <= distance_tolerance:
             print("You got it right! It took you ", ctr, " steps to localize.")
             localized = True
-        if ctr == 10:
+        if ctr == 1000:
             print("Sorry, it took you too many steps to localize the target.")
         # More Visualization
         measured_broken_robot.setheading(target_bot.heading*180/pi)
