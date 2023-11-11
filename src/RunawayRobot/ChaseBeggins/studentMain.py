@@ -45,6 +45,8 @@ def next_move(hunter_position, hunter_heading, target_measurement, max_distance,
     # The OTHER variable is a place for you to store any historical information about
     # the progress of the hunt (or maybe some localization information). Your return format
     # must be as follows in order to be graded properly.
+    if (OTHER is None):
+        OTHER = ([hunter_position], [hunter_heading], [target_measurement])
     return turning, distance, OTHER
 
 
@@ -139,10 +141,11 @@ def naive_next_move(hunter_position, hunter_heading, target_measurement, max_dis
     distance = max_distance  # full speed ahead!
     return turning, distance, OTHER
 
-# target = robot(0.0, 10.0, 0.0, 2*pi / 30, 1.5)
-# measurement_noise = .05*target.distance
-# target.set_noise(0.0, 0.0, measurement_noise)
 
-# hunter = robot(-10.0, -10.0, 0.0)
+target = robot(0.0, 10.0, 0.0, 2*pi / 30, 1.5)
+measurement_noise = .05*target.distance
+target.set_noise(0.0, 0.0, measurement_noise)
 
-# print demo_grading(hunter, target, naive_next_move)
+hunter = robot(-10.0, -10.0, 0.0)
+
+print(demo_grading(hunter, target, next_move))
