@@ -47,66 +47,63 @@ def estimate_next_pos(measurement, OTHER=None):
     # in this order for grading purposes.
     xy_estimate = (0., 0.)
     if (OTHER is None):
-        # x = [x, y, r, angle, dAngle]
-        x = matrix([[0., 0., 0., 0., 0.]])
-        P = matrix([[]])
-        P.identity(5)
-        for i in range(len(P.value)):
-            for j in range(len(P.value[i])):
-                P.value[i][j] *= 1000.
-        # OTHER = {'z': [measurement], 'x': x.transpose(), 'p': P}
-        OTHER = (x.transpose(), P)
+        # [xi, yi, cx, cy, r, theta, dtheta]
+        x = matrix([[0.],
+                    [0.],
+                    [0.],
+                    [0.],
+                    [0.],
+                    [0.],
+                    [0.]])
+        var = 1000.
+        P = matrix([[var, 0., 0., 0., 0., 0., 0.],
+                    [0., var, 0., 0., 0., 0., 0.],
+                    [0., 0., var, 0., 0., 0., 0.],
+                    [0., 0., 0., var, 0., 0., 0.],
+                    [0., 0., 0., 0., var, 0., 0.],
+                    [0., 0., 0., 0., 0., var, 0.],
+                    [0., 0., 0., 0., 0., 0., var]])
+        OTHER = x, P
     x, P = OTHER
-    x, P = kalman(measurement, P, x)
-    xy_estimate = (x.value[0][0], x.value[1][0])
-    OTHER = x, P
+    x.value[0][0] = measurement[0]
+    x.value[1][0] = measurement[1]
+    x, P = kalman(x, P)
+    xy_estimate = x.value[0][0], x.value[1][0]
     return xy_estimate, OTHER
 
 
-def kalman(measurement: tuple[float, float], P: matrix, x: matrix) -> tuple[matrix, matrix]:
-    u = matrix([[0., 0., 0., 0., 0.]])
-    u = u.transpose()
+def kalman(x: matrix, P: matrix) -> tuple[matrix, ...]:
+    # UPDATE STEP
 
-    H = matrix([[1., 0., 0., 0., 0.],
-                [0., 1., 0., 0., 0.]])
-    R = matrix([[measurement_noise, 0.],
-                [0., measurement_noise]])
-    I = matrix([[]])
-    I.identity(5)
+    # PREDICTION STEP
+    # Prediction state
+    xi, yi, cx, cy, r, theta, dtheta = getState(x)
+    theta = theta+dtheta
+    xi = cx + r*cos(theta)
+    yi = cy + r*sin(theta)
 
-    x1, y1 = measurement
-    Z = matrix([[x1, y1]])
-    y = Z.transpose() - H*x
-    S = H*P*H.transpose() + R
-    K = P*H.transpose()*S.inverse()
-    x = x + K*y
-    P = (I - K*H) * P
-
-    x0 = x.value[0][0]
-    y0 = x.value[1][0]
-    r = x.value[2][0]
-    angle = x.value[3][0]
-    dAngle = x.value[4][0]
-
-    # next state function
-    F = matrix([[1., 0., cos(angle+dAngle), -r*sin(angle+dAngle), -r*sin(angle+dAngle)],
-                [0., 1., sin(angle+dAngle), r*cos(angle+dAngle),
-                 r*cos(angle+dAngle)],
-                [0., 0., 1., 0., 0.],
-                [0., 0., 0., 1., 1.],
-                [0., 0., 0., 0., 1.]])
-
-    # calculate new stimate
-    x = matrix([[x0 + r*cos(angle+dAngle)],
-                [y0 + r*sin(angle+dAngle)],
-                [r],
-                [angle + dAngle],
-                [dAngle]])
-
-    # prediction
+    # Predict Covariance
+    F = matrix([[0., 0., 1., 0., cos(theta), -r*sin(theta), -r*sin(theta)],
+                [0., 0., 0., 1., sin(theta), -r*cos(theta), -r*cos(theta)],
+                [0., 0., 1., 0., 0., 0., 0.],
+                [0., 0., 0., 1., 0., 0., 0.],
+                [0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 0., 0., 0., 1., 1.],
+                [0., 0., 0., 0., 0., 0., 1.]])
     P = F * P * F.transpose()
-
     return x, P
+
+
+def getState(x: matrix) -> tuple[float, ...]:
+    return (x.value[0][0],
+            x.value[1][0],
+            x.value[2][0],
+            x.value[3][0],
+            x.value[4][0],
+            x.value[5][0],
+            x.value[6][0])
+
+
 # A helper function you may find useful.
 
 
