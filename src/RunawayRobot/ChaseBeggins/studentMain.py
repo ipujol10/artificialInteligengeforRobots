@@ -45,7 +45,71 @@ def next_move(hunter_position, hunter_heading, target_measurement, max_distance,
     # The OTHER variable is a place for you to store any historical information about
     # the progress of the hunt (or maybe some localization information). Your return format
     # must be as follows in order to be graded properly.
+    if (OTHER is None):
+        x = matrix([[0.],
+                    [0.],
+                    [0.],
+                    [0.],
+                    [0.]])
+        N = x.dimx
+        var = 10000.
+        P = matrix([[]])
+        P.identity(N)
+        for i in range(N):
+            P.value[i][i] = var
+        OTHER = x, P
+    x, P = kalman(*OTHER, target_measurement)
+    estimate = x.value[0][0], x.value[1][0]
+    OTHER = x, P
+    distance = min(distance_between(hunter_position, estimate), max_distance)
+    heading = get_heading(hunter_position, estimate)
+    turning = angle_trunc(heading - hunter_heading)
     return turning, distance, OTHER
+
+
+def kalman(x: matrix, P: matrix, measurement: tuple[float, ...]) -> tuple[matrix, ...]:
+    # UPDATE STEP
+    # Innovation / residual
+    H = matrix([[1., 0., 0., 0., 0.],
+                [0., 1., 0., 0., 0.]])
+    z = matrix([[measurement[0]],
+                [measurement[1]]])
+    y = z - H*x
+
+    # Innovation covariance
+    R = matrix([[measurement_noise, 0.],
+                [0., measurement_noise]])
+    S = H*P*H.transpose() + R
+
+    # Kalman Gain
+    K = P*H.transpose()*S.inverse()
+
+    # State update
+    x = x + K*y
+
+    # Covariance update
+    I = matrix([[]])
+    I.identity(P.dimx)
+    P = (I - K*H)*P
+
+    # PREDICTION STEP
+    xi, yi, d, theta, dtheta = (x.value[i][0] for i in range(x.dimx))
+    F = matrix([[1., 0., cos(theta+dtheta), -d*sin(theta+dtheta), -d*sin(theta+dtheta)],
+                [0., 1., sin(theta+dtheta), d*cos(theta+dtheta),
+                 d*cos(theta+dtheta)],
+                [0., 0., 1., 0., 0.],
+                [0., 0., 0., 1., 1.],
+                [0., 0., 0., 0., 1.]])
+    # Prediction state
+    x = matrix([[xi + d*cos(theta+dtheta)],
+                [yi + d*sin(theta+dtheta)],
+                [d],
+                [theta + dtheta],
+                [dtheta]])
+
+    # Predict Covariance
+    P = F * P * F.transpose()
+    return x, P
 
 
 def distance_between(point1, point2):
@@ -146,7 +210,7 @@ target.set_noise(0.0, 0.0, measurement_noise)
 
 hunter = robot(-10.0, -10.0, 0.0)
 
-demo_grading(hunter, target, next_move)
+# demo_grading(hunter, target, next_move)
 
 
 def demo_grading(hunter_bot, target_bot, next_move_fcn, OTHER=None):
