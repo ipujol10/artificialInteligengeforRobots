@@ -45,7 +45,6 @@ def estimate_next_pos(measurement, OTHER=None):
 
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
-    xy_estimate = (0., 0.)
     if (OTHER is None):
         # [xi, yi, cx, cy, r, theta, dtheta]
         x = matrix([[0.],
@@ -64,16 +63,35 @@ def estimate_next_pos(measurement, OTHER=None):
                     [0., 0., 0., 0., 0., var, 0.],
                     [0., 0., 0., 0., 0., 0., var]])
         OTHER = x, P
-    x, P = OTHER
-    x.value[0][0] = measurement[0]
-    x.value[1][0] = measurement[1]
-    x, P = kalman(x, P)
+    x, P = kalman(*OTHER, measurement)
     xy_estimate = x.value[0][0], x.value[1][0]
     return xy_estimate, OTHER
 
 
-def kalman(x: matrix, P: matrix) -> tuple[matrix, ...]:
+def kalman(x: matrix, P: matrix, measurement: tuple[float, ...]) -> tuple[matrix, ...]:
     # UPDATE STEP
+    # Innovation / residual
+    H = matrix([[1., 0., 0., 0., 0., 0., 0.],
+                [0., 1., 0., 0., 0., 0., 0.]])
+    z = matrix([[measurement[0]],
+                [measurement[0]]])
+    y = z - H*x
+
+    # Innovation covariance
+    R = matrix([[measurement_noise, 0.],
+                [0., measurement_noise]])
+    S = H*P*H.transpose() + R
+
+    # Kalman Gain
+    K = P*H.transpose()*S.inverse()
+
+    # State update
+    x = x + K*y
+
+    # Covariance update
+    I = matrix([[]])
+    I.identity(7)
+    P = (I - K*H)*P
 
     # PREDICTION STEP
     # Prediction state
@@ -81,12 +99,19 @@ def kalman(x: matrix, P: matrix) -> tuple[matrix, ...]:
     theta = theta+dtheta
     xi = cx + r*cos(theta)
     yi = cy + r*sin(theta)
+    x = matrix([[xi],
+                [yi],
+                [cx],
+                [cy],
+                [r],
+                [theta],
+                [dtheta]])
 
     # Predict Covariance
     F = matrix([[0., 0., 1., 0., cos(theta), -r*sin(theta), -r*sin(theta)],
                 [0., 0., 0., 1., sin(theta), -r*cos(theta), -r*cos(theta)],
-                [0., 0., 1., 0., 0., 0., 0.],
-                [0., 0., 0., 1., 0., 0., 0.],
+                [1., 0., 0., 0., -cos(theta), r*sin(theta), r*sin(theta)],
+                [0., 1., 0., 0., -sin(theta), -r*cos(theta), -r*cos(theta)],
                 [0., 0., 0., 0., 1., 0., 0.],
                 [0., 0., 0., 0., 0., 1., 1.],
                 [0., 0., 0., 0., 0., 0., 1.]])
