@@ -46,9 +46,9 @@ def next_move(hunter_position, hunter_heading, target_measurement, max_distance,
     # the progress of the hunt (or maybe some localization information). Your return format
     # must be as follows in order to be graded properly.
     if (OTHER is None):
-        x = matrix([[0.],
-                    [0.],
-                    [0.],
+        x = matrix([[target_measurement[0]],
+                    [target_measurement[1]],
+                    [max_distance/2],
                     [0.],
                     [0.]])
         N = x.dimx
