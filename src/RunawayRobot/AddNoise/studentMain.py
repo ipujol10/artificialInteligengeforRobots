@@ -228,4 +228,4 @@ def demo_grading(estimate_next_pos_fcn, target_bot, OTHER=None):
     return localized
 
 
-# demo_grading(estimate_next_pos, test_target)
+demo_grading(estimate_next_pos, test_target)
