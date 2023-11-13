@@ -46,18 +46,19 @@ def estimate_next_pos(measurement, OTHER=None):
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
     if (OTHER is None):
-        # [cx, cy, r, theta, dtheta]
+        # [xi, yi, cx, cy, r, theta, dtheta]
         x = matrix([[0.],
+                    [0.],
+                    [0.],
                     [0.],
                     [0.],
                     [0.],
                     [0.]])
         var = 1000.
-        P = matrix([[var, 0., 0., 0., 0.],
-                    [0., var, 0., 0., 0.],
-                    [0., 0., var, 0., 0.],
-                    [0., 0., 0., var, 0.],
-                    [0., 0., 0., 0., var]])
+        P = matrix([[]])
+        P.identity(7)
+        for i in range(7):
+            P.value[i][i] = var
         OTHER = x, P
     x, P = kalman(*OTHER, measurement)
     xy_estimate = x.value[0][0], x.value[1][0]
@@ -68,12 +69,10 @@ def estimate_next_pos(measurement, OTHER=None):
 def kalman(x: matrix, P: matrix, measurement: tuple[float, ...]) -> tuple[matrix, ...]:
     # UPDATE STEP
     # Innovation / residual
-    xi, yi = measurement
-    cx, cy, r, theta, dtheta = getState(x)
-    H = matrix([[1., 0., cos(theta), -r*sin(theta), 0.],
-                [0., 1., sin(theta), r*cos(theta), 0.]])
-    z = matrix([[xi],
-                [yi]])
+    H = matrix([[1., 0., 0., 0., 0., 0., 0.],
+                [0., 1., 0., 0., 0., 0., 0.]])
+    z = matrix([[measurement[0]],
+                [measurement[1]]])
     y = z - H*x
 
     # Innovation covariance
@@ -89,33 +88,35 @@ def kalman(x: matrix, P: matrix, measurement: tuple[float, ...]) -> tuple[matrix
 
     # Covariance update
     I = matrix([[]])
-    I.identity(5)
+    I.identity(7)
     P = (I - K*H)*P
 
     # PREDICTION STEP
+    xi, yi, cx, cy, r, theta, dtheta = getState(x)
+    F = matrix([[0., 0., 1., 0., cos(theta+dtheta), -r*sin(theta+dtheta), -r*sin(theta+dtheta)],
+                [0., 0., 0., 1., sin(theta+dtheta), r *
+                 cos(theta+dtheta), r*cos(theta+dtheta)],
+                [1., 0., 0., 0., -cos(theta), r*sin(theta), r*sin(theta)],
+                [0., 1., 0., 0., -sin(theta), -r*cos(theta), -r*cos(theta)],
+                [0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 0., 0., 0., 1., 1.],
+                [0., 0., 0., 0., 0., 0., 1.]])
     # Prediction state
-    cx, cy, r, theta, dtheta = getState(x)
-    theta = theta+dtheta
-    x = matrix([[cx],
-                [cy],
+    x = matrix([[cx + r*cos(theta+dtheta)],
+                [cy + r*sin(theta+dtheta)],
+                [xi - r*cos(theta)],
+                [yi - r*sin(theta)],
                 [r],
-                [theta],
+                [(theta + dtheta) % (2*pi)],
                 [dtheta]])
 
     # Predict Covariance
-    F = matrix([[]])
-    F.identity(5)
-    F.value[3][4] = 1.
     P = F * P * F.transpose()
     return x, P
 
 
 def getState(x: matrix) -> tuple[float, ...]:
-    return (x.value[0][0],
-            x.value[1][0],
-            x.value[2][0],
-            x.value[3][0],
-            x.value[4][0])
+    return (x.value[i][0] for i in range(7))
 
 
 # A helper function you may find useful.
