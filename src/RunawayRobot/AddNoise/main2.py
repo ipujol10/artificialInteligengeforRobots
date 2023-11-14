@@ -46,9 +46,55 @@ def estimate_next_pos(measurement, OTHER=None):
     # You must return xy_estimate (x, y), and OTHER (even if it is None)
     # in this order for grading purposes.
     if (OTHER is None):
-        OTHER = [measurement]
-    xy_estimate = (0, 0)
+        N = 5000
+        p = [
+            robot(
+                measurement[0],
+                measurement[1],
+                random.random() * 2 * pi,
+                random.random() * 2 * pi,
+                random.random() * 10,
+            )
+            for _ in range(N)
+        ]
+        OTHER = p
+        return measurement, OTHER
+    OTHER, xy_estimate = particleFilter(OTHER, measurement)
     return xy_estimate, OTHER
+
+
+def particleFilter(part: list[robot], measurement: tuple[float, float]) -> tuple[list[robot], tuple[float, float]]:
+    w = []
+    for r in part:
+        r.move_in_circle()
+        d = distance_between(measurement, (r.x, r.y))
+        w.append(1.0 / d)
+    N = len(part)
+    p = []
+    index = int(random.random() * N)
+    beta = 0.
+    mw = max(w)
+    heading = 0.
+    turning = 0.
+    distance = 0.
+    for _ in range(N):
+        beta += random.random() * 2. * mw
+        while (beta > w[index]):
+            beta -= w[index]
+            index = (index + 1) % N
+        r = part[index]
+        r.x = measurement[0]
+        r.y = measurement[1]
+        p.append(r)
+        heading += r.heading
+        turning += r.turning
+        distance += r.distance
+    heading /= N
+    turning /= N
+    distance /= N
+    x = measurement[0] + distance*cos(heading+turning)
+    y = measurement[1] + distance*sin(heading+turning)
+    return p, (x, y)
 
 
 # A helper function you may find useful.
